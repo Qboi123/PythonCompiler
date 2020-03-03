@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='PyCompiler',
     version='1.0.0',
-    packages=['compiler.py'],
+    packages=['PyCompiler'],
     url='https://github.com/Qboi123/PythonCompiler',
     license='',
     author='Qboi123',
