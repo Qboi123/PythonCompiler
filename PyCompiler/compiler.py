@@ -4,7 +4,7 @@ import shutil
 import traceback
 
 import sys
-from typing import MutableSequence, Tuple
+from typing import MutableSequence, Tuple, List
 
 
 class CompilerError(BaseException):
@@ -359,3 +359,49 @@ class Compiler(object):
                 args += " " + arg
 
         return args
+
+
+class MultiCompiler(Compiler):
+    def __init__(self, compiler: Compiler, *compilers: Compiler, appname: str = ""):
+        super(Compiler, self).__init__()
+        compilers = list(compilers)
+        compilers.append(compiler)
+
+        _temp_appnames = [appname]
+        _temp_mainfiles = []
+        binfolders = []
+        for compiler in compilers:
+            if compiler.oneFile:
+                error = ValueError(f"Compiler with mainfile '{compiler.mainFile}' is in one-file mode, and one-file "
+                                   f"mode is not supported in MultiCompiler")
+                error.args = [*error.args, compiler.mainFile]
+                raise error
+            if compiler.appName in _temp_appnames:
+                raise ValueError(f"A compiler with app name '{compiler.appName}' already exists")
+            _temp_appnames.append(compiler.appName)
+            _temp_mainfiles.append(compiler.mainFile)
+            if compiler.appName is None:
+                binfolders.append(os.path.splitext(compiler.mainFile)[0])
+            else:
+                binfolders.append(compiler.appName)
+
+        maindir = os.getcwd()
+
+        for compiler in compilers:
+            os.chdir(compiler.mainFolder)
+            excludes = [os.path.abspath(exclude) for exclude in compiler.exclude]
+            for file in _temp_mainfiles:
+                if os.path.abspath(file) not in excludes:
+                    compiler.exclude.append(file)
+            os.chdir(maindir)
+
+        self.appName = appname
+        self.binFolders = binfolders
+        self.compilers = compilers
+
+    def compile(self, commands):
+        for compiler in self.compilers:
+            compiler.compile(compiler.get_command(compiler.get_args()))
+        for folder in self.binFolders:
+            for inner_folder in os.listdir(folder)
+                os.rename(f"bin/{folder}/{inner_folder}", f"bin/{self.appName}/{inner_folder}")
