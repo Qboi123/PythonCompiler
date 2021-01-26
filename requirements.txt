@@ -1,1 +1,4 @@
-PyInstaller
+PyInstaller==4.0
+typing~=3.7.4.3
+mypy~=0.782
+future~=0.18.2
